@@ -14,6 +14,7 @@ namespace NzbDrone.Core.MediaFiles
             {
                 // Unknown
                 { ".webm", Quality.Unknown },
+                { ".disc", Quality.Unknown },
 
                 // SDTV
                 { ".m4v", Quality.SDTV },
