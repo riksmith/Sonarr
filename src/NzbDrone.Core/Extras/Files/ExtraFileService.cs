@@ -105,7 +105,7 @@ namespace NzbDrone.Core.Extras.Files
         {
             var episodeFile = message.EpisodeFile;
 
-            if (message.Reason == DeleteMediaFileReason.NoLinkedEpisodes)
+            if (message.Reason == DeleteMediaFileReason.NoLinkedEpisodes || message.Reason == DeleteMediaFileReason.MissingFromDisk)
             {
                 _logger.Debug("Removing episode file from DB as part of cleanup routine, not deleting extra files from disk.");
             }
