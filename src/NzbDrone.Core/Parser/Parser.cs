@@ -51,6 +51,9 @@ namespace NzbDrone.Core.Parser
 
                 // Some Chinese anime releases contain both Chinese and English titles separated by | instead of /, remove the Chinese title and replace with normal anime pattern
                 new RegexReplace(@"^\[(?<subgroup>[^\]]+)\](?:\s)(?:(?<chinesetitle>(?=[^\]]*?[\u4E00-\u9FCC])[^\]]*?)(?:\s\|\s))(?<title>[^\]]+?)(?:[- ]+)(?<episode>[0-9]+(?:-[0-9]+)?(?![a-z]))话?(?:END|完)?", "[${subgroup}] ${title} - ${episode} ", RegexOptions.Compiled),
+
+                // Spanish releases with information in brackets
+                new RegexReplace(@"^(?<title>.+?(?=[ ._-]\()).+?\((?<year>\d{4})\/(?<info>S[^\/]+)", "${title} (${year}) - ${info} ", RegexOptions.Compiled),
             };
 
         private static readonly Regex[] ReportTitleRegex = new[]
@@ -572,7 +575,7 @@ namespace NzbDrone.Core.Parser
         private static readonly Regex YearInTitleRegex = new Regex(@"^(?<title>.+?)[-_. ]+?[\(\[]?(?<year>\d{4})[\]\)]?",
                                                                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        private static readonly Regex TitleComponentsRegex = new Regex(@"^(?:(?<title>.+?) \((?<title>.+?)\)|(?<title>.+?) \| (?<title>.+?))$",
+        private static readonly Regex TitleComponentsRegex = new Regex(@"^(?:(?<title>.+?) \((?<title>.+?)\)|(?<title>.+?) \| (?<title>.+?)|(?<title>.+?) AKA (?<title>.+?))$",
                                                                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         private static readonly Regex PartRegex = new Regex(@"\(\d+\)$", RegexOptions.Compiled);

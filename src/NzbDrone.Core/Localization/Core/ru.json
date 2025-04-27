@@ -2061,7 +2061,7 @@
     "Umask770Description": "{octal} - Владелец и группа - запись",
     "UiSettings": "Настройки пользовательского интерфейса",
     "UiLanguage": "Язык пользовательского интерфейса",
-    "Ui": "Пользовательский интерфейс",
+    "Ui": "Интерфейс",
     "ShowSeriesTitleHelpText": "Показать название сериала под постером",
     "ShowSeasonCount": "Показать количество сезонов",
     "TorrentBlackholeSaveMagnetFilesExtension": "Сохранить магнет-файлы с расширением",
@@ -2089,5 +2089,9 @@
     "LogSizeLimit": "Ограничение размера журнала",
     "LogSizeLimitHelpText": "Максимальный размер файла журнала в МБ перед архивированием. По умолчанию - 1 МБ.",
     "IndexerHDBitsSettingsMediums": "Mediums",
-    "CountCustomFormatsSelected": "{count} пользовательских форматов выбрано"
+    "CountCustomFormatsSelected": "{count} пользовательских форматов выбрано",
+    "Completed": "Завершено",
+    "CutoffNotMet": "Порог не достигнут",
+    "CustomFormatsSpecificationExceptLanguage": "Кроме языка",
+    "CustomFormatsSpecificationExceptLanguageHelpText": "Подходит, если есть любой язык кроме указанного"
 }
