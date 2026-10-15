@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using NLog;
 using NzbDrone.Common;
 using NzbDrone.Common.Extensions;
@@ -15,6 +16,8 @@ namespace NzbDrone.Core.MediaFiles
 
     public class MediaFileTableCleanupService : IMediaFileTableCleanupService
     {
+        private const string DiscStubExtension = ".disc";
+
         private readonly IMediaFileService _mediaFileService;
         private readonly IEpisodeService _episodeService;
         private readonly Logger _logger;
@@ -34,6 +37,7 @@ namespace NzbDrone.Core.MediaFiles
             var episodes = _episodeService.GetEpisodeBySeries(series.Id);
 
             var filesOnDiskKeys = new HashSet<string>(filesOnDisk, PathEqualityComparer.Instance);
+            var trackedFiles = new HashSet<string>(seriesFiles.Select(f => Path.Combine(series.Path, f.RelativePath)), PathEqualityComparer.Instance);
 
             foreach (var seriesFile in seriesFiles)
             {
@@ -42,6 +46,11 @@ namespace NzbDrone.Core.MediaFiles
 
                 try
                 {
+                    if (!filesOnDiskKeys.Contains(episodeFilePath) && TryReplaceWithDiscStub(episodeFile, episodeFilePath, filesOnDiskKeys, trackedFiles))
+                    {
+                        continue;
+                    }
+
                     if (!filesOnDiskKeys.Contains(episodeFilePath))
                     {
                         _logger.Debug("File [{0}] no longer exists on disk, removing from db", episodeFilePath);
@@ -81,6 +90,30 @@ namespace NzbDrone.Core.MediaFiles
                     _episodeService.UpdateEpisode(episode);
                 }
             }
+        }
+
+        // An archived video replaced by a .disc stub with the same name keeps its episode file, so quality, media info and extras are preserved
+        private bool TryReplaceWithDiscStub(EpisodeFile episodeFile, string episodeFilePath, HashSet<string> filesOnDisk, HashSet<string> trackedFiles)
+        {
+            if (Path.GetExtension(episodeFilePath).Equals(DiscStubExtension, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var discStubPath = Path.ChangeExtension(episodeFilePath, DiscStubExtension);
+
+            if (!filesOnDisk.Contains(discStubPath) || trackedFiles.Contains(discStubPath))
+            {
+                return false;
+            }
+
+            _logger.Debug("File [{0}] has been replaced by [{1}], updating episode file", episodeFilePath, discStubPath);
+
+            episodeFile.RelativePath = Path.ChangeExtension(episodeFile.RelativePath, DiscStubExtension);
+            _mediaFileService.Update(episodeFile);
+            trackedFiles.Add(discStubPath);
+
+            return true;
         }
     }
 }

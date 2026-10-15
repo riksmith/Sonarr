@@ -10,6 +10,7 @@ namespace NzbDrone.Core.MediaFiles
         {
             // Unknown
             { ".webm", Quality.Unknown },
+            { ".disc", Quality.Unknown },
 
             // SDTV
             { ".m4v", Quality.SDTV },
@@ -67,7 +68,7 @@ namespace NzbDrone.Core.MediaFiles
 
         public static HashSet<string> Extensions => new (FileExtensions.Keys, StringComparer.OrdinalIgnoreCase);
 
-        public static HashSet<string> DiskExtensions => new (new[] { ".img", ".iso", ".vob" }, StringComparer.OrdinalIgnoreCase);
+        public static HashSet<string> DiskExtensions => new (new[] { ".img", ".iso", ".vob", ".disc" }, StringComparer.OrdinalIgnoreCase);
 
         public static HashSet<string> StreamingExtensions => new (new[] { ".m3u", ".strm" }, StringComparer.OrdinalIgnoreCase);
 
