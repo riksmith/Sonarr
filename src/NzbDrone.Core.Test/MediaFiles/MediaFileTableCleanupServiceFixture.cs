@@ -127,5 +127,75 @@ namespace NzbDrone.Core.Test.MediaFiles
 
             Mocker.GetMock<IEpisodeService>().Verify(c => c.UpdateEpisode(It.IsAny<Episode>()), Times.Never());
         }
+
+        private EpisodeFile GivenEpisodeFileWithEpisode(int id, string relativePath)
+        {
+            _episodes[id - 1].EpisodeFileId = id;
+
+            return Builder<EpisodeFile>.CreateNew()
+                                       .With(f => f.Id = id)
+                                       .With(f => f.RelativePath = relativePath.AsOsAgnostic())
+                                       .Build();
+        }
+
+        private string SeriesFilePath(string relativePath)
+        {
+            return Path.Combine(_series.Path, relativePath.AsOsAgnostic());
+        }
+
+        [Test]
+        public void should_update_episode_file_to_disc_stub_when_video_is_replaced()
+        {
+            var episodeFile = GivenEpisodeFileWithEpisode(1, @"Season 1\Series - S01E01.mkv");
+
+            GivenEpisodeFiles(new[] { episodeFile });
+
+            Subject.Clean(_series, new List<string> { SeriesFilePath(@"Season 1\Series - S01E01.disc") });
+
+            Mocker.GetMock<IMediaFileService>().Verify(c => c.Update(It.Is<EpisodeFile>(e => e.Id == 1 && e.RelativePath == @"Season 1\Series - S01E01.disc".AsOsAgnostic())), Times.Once());
+            Mocker.GetMock<IMediaFileService>().Verify(c => c.Delete(It.IsAny<EpisodeFile>(), It.IsAny<DeleteMediaFileReason>()), Times.Never());
+            Mocker.GetMock<IEpisodeService>().Verify(c => c.UpdateEpisode(It.Is<Episode>(e => e.Id == _episodes[0].Id)), Times.Never());
+        }
+
+        [Test]
+        public void should_delete_missing_file_when_disc_stub_is_already_tracked()
+        {
+            var videoFile = GivenEpisodeFileWithEpisode(1, @"Season 1\Series - S01E01.mkv");
+            var discFile = GivenEpisodeFileWithEpisode(2, @"Season 1\Series - S01E01.disc");
+
+            GivenEpisodeFiles(new[] { videoFile, discFile });
+
+            Subject.Clean(_series, new List<string> { SeriesFilePath(@"Season 1\Series - S01E01.disc") });
+
+            Mocker.GetMock<IMediaFileService>().Verify(c => c.Update(It.IsAny<EpisodeFile>()), Times.Never());
+            Mocker.GetMock<IMediaFileService>().Verify(c => c.Delete(It.Is<EpisodeFile>(e => e.Id == 1), DeleteMediaFileReason.MissingFromDisk), Times.Once());
+        }
+
+        [Test]
+        public void should_only_replace_one_missing_file_with_the_same_disc_stub()
+        {
+            var mkvFile = GivenEpisodeFileWithEpisode(1, @"Season 1\Series - S01E01.mkv");
+            var mp4File = GivenEpisodeFileWithEpisode(2, @"Season 1\Series - S01E01.mp4");
+
+            GivenEpisodeFiles(new[] { mkvFile, mp4File });
+
+            Subject.Clean(_series, new List<string> { SeriesFilePath(@"Season 1\Series - S01E01.disc") });
+
+            Mocker.GetMock<IMediaFileService>().Verify(c => c.Update(It.Is<EpisodeFile>(e => e.Id == 1)), Times.Once());
+            Mocker.GetMock<IMediaFileService>().Verify(c => c.Delete(It.Is<EpisodeFile>(e => e.Id == 2), DeleteMediaFileReason.MissingFromDisk), Times.Once());
+        }
+
+        [Test]
+        public void should_delete_missing_disc_stub()
+        {
+            var discFile = GivenEpisodeFileWithEpisode(1, @"Season 1\Series - S01E01.disc");
+
+            GivenEpisodeFiles(new[] { discFile });
+
+            Subject.Clean(_series, new List<string>());
+
+            Mocker.GetMock<IMediaFileService>().Verify(c => c.Update(It.IsAny<EpisodeFile>()), Times.Never());
+            Mocker.GetMock<IMediaFileService>().Verify(c => c.Delete(It.Is<EpisodeFile>(e => e.Id == 1), DeleteMediaFileReason.MissingFromDisk), Times.Once());
+        }
     }
 }

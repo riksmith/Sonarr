@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using NLog;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.Extensions;
@@ -16,6 +17,8 @@ namespace NzbDrone.Core.Extras.Others
 {
     public class OtherExtraService : ExtraFileManager<OtherExtraFile>
     {
+        private static readonly Regex MediaInfoXmlSuffixRegex = new Regex(@"(?<separator>[-.])mediainfo$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
         private readonly IDiskProvider _diskProvider;
         private readonly IOtherExtraFileService _otherExtraFileService;
         private readonly IMediaFileAttributeService _mediaFileAttributeService;
@@ -73,7 +76,7 @@ namespace NzbDrone.Core.Extras.Others
 
                 foreach (var extraFile in extraFilesForEpisodeFile)
                 {
-                    movedFiles.AddIfNotNull(MoveFile(series, episodeFile, extraFile));
+                    movedFiles.AddIfNotNull(MoveFile(series, episodeFile, extraFile, GetPreservedSuffix(extraFile.RelativePath, episodeFile.RelativePath)));
                 }
             }
 
@@ -145,7 +148,7 @@ namespace NzbDrone.Core.Extras.Others
             {
                 try
                 {
-                    var suffix = GetSuffix(copy, matchingFiles.Count > 1);
+                    var suffix = GetPreservedSuffix(file, episodeFile.RelativePath) ?? GetSuffix(copy, matchingFiles.Count > 1);
                     var extraFile = ImportFile(localEpisode.Series, episodeFile, file, isReadOnly, Path.GetExtension(file), suffix);
                     _mediaFileAttributeService.SetFilePermissions(file);
                     _otherExtraFileService.Upsert(extraFile);
@@ -173,6 +176,30 @@ namespace NzbDrone.Core.Extras.Others
             }
 
             return suffixBuilder.ToString();
+        }
+
+        // Extra files are renamed to <episode file name><extension>, keep known suffixes that other tools rely on
+        private static string GetPreservedSuffix(string extraFilePath, string episodeFileRelativePath)
+        {
+            if (!Path.GetExtension(extraFilePath).Equals(".xml", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            // tinyMediaManager: <video name>-mediainfo.xml or <video name>.<video extension>.mediainfo.xml
+            var match = MediaInfoXmlSuffixRegex.Match(Path.GetFileNameWithoutExtension(extraFilePath));
+
+            if (!match.Success)
+            {
+                return null;
+            }
+
+            if (match.Groups["separator"].Value == ".")
+            {
+                return Path.GetExtension(episodeFileRelativePath) + match.Value;
+            }
+
+            return match.Value;
         }
     }
 }

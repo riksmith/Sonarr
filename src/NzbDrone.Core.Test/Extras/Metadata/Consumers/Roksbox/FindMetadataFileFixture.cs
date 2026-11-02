@@ -68,6 +68,14 @@ namespace NzbDrone.Core.Test.Extras.Metadata.Consumers.Roksbox
         }
 
         [Test]
+        public void should_return_null_for_mediainfo_xml_of_episode()
+        {
+            var path = Path.Combine(_series.Path, "the.series.s01e01.episode-mediainfo.xml");
+
+            Subject.FindMetadataFile(_series, path).Should().BeNull();
+        }
+
+        [Test]
         public void should_return_series_image_for_folder_jpg_in_series_folder()
         {
             var path = Path.Combine(_series.Path, new DirectoryInfo(_series.Path).Name + ".jpg");

@@ -62,6 +62,12 @@ namespace NzbDrone.Core.Extras.Metadata.Consumers.Wdtv
                 return null;
             }
 
+            // MediaInfo exports kept next to .disc stubs are not WDTV metadata and must keep their name when the episode is renamed
+            if (filename.EndsWith("-mediainfo.xml", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
             var metadata = new MetadataFile
                            {
                                SeriesId = series.Id,

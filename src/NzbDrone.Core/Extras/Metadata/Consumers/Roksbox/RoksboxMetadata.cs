@@ -63,6 +63,12 @@ namespace NzbDrone.Core.Extras.Metadata.Consumers.Roksbox
                 return null;
             }
 
+            // MediaInfo exports kept next to .disc stubs are not Roksbox metadata and must keep their name when the episode is renamed
+            if (filename.EndsWith("-mediainfo.xml", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
             var parentdir = Directory.GetParent(path);
 
             var metadata = new MetadataFile
